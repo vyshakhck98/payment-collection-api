@@ -65,46 +65,150 @@ export default function HomeScreen() {
 
       setLoanDetails(null);
 
+      console.log('================================');
+      console.log('ACCOUNT SEARCH START');
+      console.log('Account number:', account);
+
       const response = await api.get(
         `/customers/account/${account}`
       );
 
       console.log(
-        'Loan details:',
+        'ACCOUNT API STATUS:',
+        response.status
+      );
+
+      console.log(
+        'ACCOUNT API RESPONSE:',
         response.data
       );
 
+      // ------------------------------------------
+      // Check API success
+      // ------------------------------------------
+
       if (!response.data?.success) {
         Alert.alert(
-          'Account Not Found',
-          'Please check your account number and try again.'
+          'API RESPONSE ERROR',
+          `Account: ${account}\n\n` +
+            `Status: ${response.status}\n\n` +
+            `Response:\n${JSON.stringify(
+              response.data,
+              null,
+              2
+            )}`
         );
 
         return;
       }
 
+      // ------------------------------------------
+      // Get customer data
+      // ------------------------------------------
+
       const customer = response.data.data;
+
+      if (!customer) {
+        Alert.alert(
+          'API DATA ERROR',
+          'API returned success but customer data is missing.\n\n' +
+            `Response:\n${JSON.stringify(
+              response.data,
+              null,
+              2
+            )}`
+        );
+
+        return;
+      }
+
+      console.log(
+        'CUSTOMER DATA:',
+        customer
+      );
+
+      // ------------------------------------------
+      // Set loan details
+      // ------------------------------------------
 
       setLoanDetails(customer);
 
       // Automatically fill EMI amount
+
       setAmount(
         String(customer.emi_due)
       );
 
     } catch (error: any) {
       console.error(
-        'Loan details error:',
+        '================================'
+      );
+
+      console.error(
+        'LOAN DETAILS ERROR:',
         error
       );
 
-      setLoanDetails(null);
+      // ------------------------------------------
+      // Collect detailed error information
+      // ------------------------------------------
+
+      const baseURL =
+        error?.config?.baseURL || 'UNKNOWN';
+
+      const requestURL =
+        error?.config?.url || 'UNKNOWN';
+
+      const fullURL =
+        baseURL !== 'UNKNOWN' &&
+        requestURL !== 'UNKNOWN'
+          ? `${baseURL}${requestURL}`
+          : 'UNKNOWN';
+
+      const errorMessage =
+        error?.message ||
+        'Unknown error';
+
+      const errorCode =
+        error?.code ||
+        'N/A';
+
+      const errorStatus =
+        error?.response?.status ||
+        'N/A';
+
+      const errorResponse =
+        error?.response?.data
+          ? JSON.stringify(
+              error.response.data,
+              null,
+              2
+            )
+          : 'No response received';
+
+      const debugMessage = [
+        `Account: ${account}`,
+        `URL: ${fullURL}`,
+        `Error: ${errorMessage}`,
+        `Code: ${errorCode}`,
+        `Status: ${errorStatus}`,
+        `Response: ${errorResponse}`,
+      ].join('\n\n');
+
+      console.error(
+        'DEBUG INFORMATION:',
+        debugMessage
+      );
+
+      // ------------------------------------------
+      // Show REAL error on APK
+      // ------------------------------------------
 
       Alert.alert(
-        'Account Not Found',
-        error?.response?.data?.message ||
-          'We could not find this account. Please check the account number.'
+        'API DEBUG ERROR',
+        debugMessage
       );
+
     } finally {
       setLoading(false);
     }
@@ -156,7 +260,8 @@ export default function HomeScreen() {
           accountNumber:
             loanDetails.account_number,
 
-          paymentAmount: paymentAmount,
+          paymentAmount:
+            paymentAmount,
         }
       );
 
@@ -176,11 +281,13 @@ export default function HomeScreen() {
       if (response.data?.data?.id) {
         newPaymentId =
           response.data.data.id;
+
       } else if (
         response.data?.payment?.id
       ) {
         newPaymentId =
           response.data.payment.id;
+
       } else if (response.data?.id) {
         newPaymentId =
           response.data.id;
@@ -188,7 +295,10 @@ export default function HomeScreen() {
 
       setPaymentId(newPaymentId);
 
+      // ------------------------------------------
       // Show success screen
+      // ------------------------------------------
+
       setPaymentSuccess(true);
 
     } catch (error: any) {
@@ -197,11 +307,36 @@ export default function HomeScreen() {
         error
       );
 
+      const paymentError =
+        [
+          `Error: ${
+            error?.message ||
+            'Unknown error'
+          }`,
+          `Code: ${
+            error?.code ||
+            'N/A'
+          }`,
+          `Status: ${
+            error?.response?.status ||
+            'N/A'
+          }`,
+          `Response: ${
+            error?.response?.data
+              ? JSON.stringify(
+                  error.response.data,
+                  null,
+                  2
+                )
+              : 'No response received'
+          }`,
+        ].join('\n\n');
+
       Alert.alert(
         'Payment Failed',
-        error?.response?.data?.message ||
-          'We could not process the payment. Please try again.'
+        paymentError
       );
+
     } finally {
       setPaymentLoading(false);
     }
@@ -234,16 +369,20 @@ export default function HomeScreen() {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
+        contentContainerStyle={
+          styles.content
+        }
+        showsVerticalScrollIndicator={
+          false
+        }
       >
-
-
 
         {/* Account Form */}
 
         <AccountForm
-          accountNumber={accountNumber}
+          accountNumber={
+            accountNumber
+          }
           onAccountNumberChange={
             setAccountNumber
           }
@@ -255,14 +394,22 @@ export default function HomeScreen() {
         {/* Loan Loading */}
 
         {loading && (
-          <View style={styles.loadingContainer}>
+          <View
+            style={
+              styles.loadingContainer
+            }
+          >
 
             <ActivityIndicator
               size="small"
               color="#2563EB"
             />
 
-            <Text style={styles.loadingText}>
+            <Text
+              style={
+                styles.loadingText
+              }
+            >
               Getting your loan details...
             </Text>
 
@@ -271,60 +418,82 @@ export default function HomeScreen() {
 
         {/* Loan Details */}
 
-        {loanDetails && !loading && (
-          <View>
+        {loanDetails &&
+          !loading && (
+            <View>
 
-            <LoanDetailsCard
-              loanDetails={loanDetails}
-            />
-
-            {/* Payment Form */}
-
-            <PaymentForm
-              amount={amount}
-              onAmountChange={setAmount}
-              onPay={makePayment}
-            />
-
-            {/* Payment Loading */}
-
-            {paymentLoading && (
-              <View
-                style={
-                  styles.paymentLoading
+              <LoanDetailsCard
+                loanDetails={
+                  loanDetails
                 }
-              >
-                <ActivityIndicator
-                  size="small"
-                  color="#16A34A"
-                />
+              />
 
-                <Text
+              {/* Payment Form */}
+
+              <PaymentForm
+                amount={amount}
+                onAmountChange={
+                  setAmount
+                }
+                onPay={
+                  makePayment
+                }
+              />
+
+              {/* Payment Loading */}
+
+              {paymentLoading && (
+                <View
                   style={
-                    styles.loadingText
+                    styles.paymentLoading
                   }
                 >
-                  Processing payment...
-                </Text>
-              </View>
-            )}
 
-          </View>
-        )}
+                  <ActivityIndicator
+                    size="small"
+                    color="#16A34A"
+                  />
+
+                  <Text
+                    style={
+                      styles.loadingText
+                    }
+                  >
+                    Processing payment...
+                  </Text>
+
+                </View>
+              )}
+
+            </View>
+          )}
 
         {/* Bottom Help */}
 
         {!loanDetails &&
           !loading && (
-            <View style={styles.helpBox}>
+            <View
+              style={
+                styles.helpBox
+              }
+            >
 
-              <Text style={styles.helpTitle}>
+              <Text
+                style={
+                  styles.helpTitle
+                }
+              >
                 Need help?
               </Text>
 
-              <Text style={styles.helpText}>
-                Enter your registered account
-                number above to continue.
+              <Text
+                style={
+                  styles.helpText
+                }
+              >
+                Enter your registered
+                account number above to
+                continue.
               </Text>
 
             </View>
@@ -338,13 +507,19 @@ export default function HomeScreen() {
         <PaymentSuccess
           amount={amount}
           paymentId={paymentId}
-          onDone={handlePaymentDone}
+          onDone={
+            handlePaymentDone
+          }
         />
       )}
 
     </View>
   );
 }
+
+// ------------------------------------------
+// Styles
+// ------------------------------------------
 
 const styles = StyleSheet.create({
 
@@ -383,7 +558,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-
     paddingVertical: 20,
   },
 
@@ -391,7 +565,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-
     paddingVertical: 10,
   },
 
@@ -403,11 +576,8 @@ const styles = StyleSheet.create({
 
   helpBox: {
     backgroundColor: '#EFF6FF',
-
     borderRadius: 12,
-
     padding: 16,
-
     marginTop: 5,
   },
 
