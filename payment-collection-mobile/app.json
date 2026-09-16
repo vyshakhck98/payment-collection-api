@@ -18,8 +18,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.vyshakhck.paymentcollectionmobile",
-      "usesCleartextTraffic": true
+      "package": "com.vyshakhck.paymentcollectionmobile"
     },
     "web": {
       "output": "static",
@@ -35,7 +34,14 @@
           "imageWidth": 76
         }
       ],
-      "expo-build-properties"
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
