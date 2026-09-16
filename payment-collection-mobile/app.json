@@ -18,7 +18,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.vyshakhck.paymentcollectionmobile"
+      "package": "com.vyshakhck.paymentcollectionmobile",
+      "usesCleartextTraffic": true
     },
     "web": {
       "output": "static",
